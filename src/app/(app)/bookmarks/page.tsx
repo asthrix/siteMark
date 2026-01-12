@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useUIStore } from "@/store/ui-store";
+import { useFilterStore } from "@/store/filter-store";
 
 // ============================================================================
 // LOADING SKELETON
@@ -87,7 +88,11 @@ interface BookmarkType {
 // ============================================================================
 export default function BookmarksPage() {
   const { viewMode } = useUIStore();
-  const { data, isLoading, error } = useBookmarks({ isArchived: false });
+  const { selectedTags } = useFilterStore();
+  const { data, isLoading, error } = useBookmarks({
+    isArchived: false,
+    tags: selectedTags.length > 0 ? selectedTags : undefined,
+  });
 
   return (
     <div className="flex flex-col h-full">
@@ -124,7 +129,7 @@ export default function BookmarksPage() {
         {!isLoading && !error && data && data.bookmarks.length > 0 && (
           <>
             {viewMode === "grid" ? (
-              <MasonryGrid columns={4} gap="md">
+              <MasonryGrid columns={4} gap="md" key={selectedTags.join("-") + data.bookmarks.length}>
                 {data.bookmarks.map((bookmark: BookmarkType) => (
                   <BookmarkCard key={bookmark.id} bookmark={bookmark} />
                 ))}

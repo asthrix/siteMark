@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
@@ -32,6 +32,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useUIStore } from "@/store/ui-store";
+import { useFilterStore } from "@/store/filter-store";
 import { useCollections } from "@/hooks/use-collections";
 import { useTags, useDeleteTag } from "@/hooks/use-tags";
 import { cn } from "@/lib/utils";
@@ -61,10 +62,20 @@ interface CollectionData {
 // ============================================================================
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isSidebarCollapsed, toggleSidebarCollapse } = useUIStore();
+  const { selectedTags, toggleTag } = useFilterStore();
   const { data: collections } = useCollections();
   const { data: tags } = useTags();
   const deleteTag = useDeleteTag();
+
+  // Handle tag click for filtering
+  const handleTagClick = (tagId: string) => {
+    toggleTag(tagId);
+    if (pathname !== "/bookmarks") {
+      router.push("/bookmarks");
+    }
+  };
 
   // Dialog states
   const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
@@ -292,16 +303,23 @@ export function Sidebar() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 px-3">
                   {tags && tags.length > 0 ? (
-                    tags.slice(0, 10).map((tag: TagData) => (
+                    tags.slice(0, 10).map((tag: TagData) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
                       <ContextMenu key={tag.id}>
                         <ContextMenuTrigger>
                           <Badge
-                            variant="outline"
-                            className="cursor-pointer text-xs transition-colors hover:bg-accent"
+                            variant={isSelected ? "default" : "outline"}
+                            className={cn(
+                              "cursor-pointer text-xs transition-colors hover:bg-accent",
+                              isSelected && "ring-2 ring-primary ring-offset-1"
+                            )}
                             style={{
                               borderColor: tag.color || undefined,
-                              color: tag.color || undefined,
+                              color: isSelected ? undefined : tag.color || undefined,
+                              backgroundColor: isSelected ? tag.color || undefined : undefined,
                             }}
+                            onClick={() => handleTagClick(tag.id)}
                           >
                             {tag.name}
                           </Badge>
@@ -320,7 +338,8 @@ export function Sidebar() {
                           </ContextMenuItem>
                         </ContextMenuContent>
                       </ContextMenu>
-                    ))
+                    );
+                  })
                   ) : (
                     <p className="text-xs text-muted-foreground py-2">
                       No tags yet

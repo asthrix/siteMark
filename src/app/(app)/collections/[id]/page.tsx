@@ -13,8 +13,33 @@ import { BookmarkCard } from "@/components/bookmark/bookmark-card";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useCollections } from "@/hooks/use-collections";
 import { getIconComponent } from "@/components/ui/icon-picker";
-import { useFilterStore } from "@/store/filter-store";
-import { useEffect } from "react";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+interface CollectionType {
+  id: string;
+  name: string;
+  description?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  isPublic: boolean;
+  _count: { bookmarks: number };
+}
+
+interface BookmarkType {
+  id: string;
+  url: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  faviconUrl: string | null;
+  domain: string | null;
+  isFavorite: boolean;
+  isArchived: boolean;
+  tags: { tag: { id: string; name: string; color: string | null } }[];
+  collection?: { id: string; name: string; color: string | null } | null;
+}
 
 // ============================================================================
 // COLLECTION DETAIL PAGE
@@ -25,17 +50,13 @@ export default function CollectionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { setSelectedCollection, resetFilters } = useFilterStore();
   const { data: collections, isLoading: isLoadingCollections } = useCollections();
-  const { data: bookmarksData, isLoading: isLoadingBookmarks } = useBookmarks();
+  const { data: bookmarksData, isLoading: isLoadingBookmarks } = useBookmarks({
+    collectionId: id,
+    isArchived: false,
+  });
 
-  // Set collection filter when page loads
-  useEffect(() => {
-    setSelectedCollection(id);
-    return () => resetFilters();
-  }, [id, setSelectedCollection, resetFilters]);
-
-  const collection = collections?.find((c) => c.id === id);
+  const collection = collections?.find((c: CollectionType) => c.id === id);
   const IconComponent = collection?.icon
     ? getIconComponent(collection.icon)
     : null;
@@ -50,7 +71,7 @@ export default function CollectionDetailPage({
       <div className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="flex h-16 items-center gap-4 px-6">
           {/* Back button */}
-          <Link href="/dashboard/collections">
+          <Link href="/collections">
             <Button variant="ghost" size="icon" className="shrink-0">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -139,7 +160,7 @@ export default function CollectionDetailPage({
         {/* Bookmarks Grid */}
         {!isLoadingBookmarks && bookmarksData && bookmarksData.bookmarks.length > 0 && (
           <MasonryGrid columns={4} gap="md">
-            {bookmarksData.bookmarks.map((bookmark) => (
+            {bookmarksData.bookmarks.map((bookmark: BookmarkType) => (
               <BookmarkCard key={bookmark.id} bookmark={bookmark} />
             ))}
           </MasonryGrid>

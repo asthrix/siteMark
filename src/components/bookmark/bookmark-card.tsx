@@ -69,15 +69,18 @@ export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
     toggleFavorite.mutate(bookmark.id);
   };
 
-  const handleArchive = () => {
+  const handleArchive = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     toggleArchive.mutate(bookmark.id);
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     deleteBookmark.mutate(bookmark.id);
   };
 
-  const handleEdit = () => {
+  const handleEdit = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     openEditBookmark(bookmark.id);
   };
 
@@ -252,18 +255,18 @@ export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
               <MoreHorizontal className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={handleEdit}>
+          <DropdownMenuContent align="end" className="w-40" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={(e) => handleEdit(e)}>
               <Pencil className="h-4 w-4 mr-2" />
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleArchive}>
+            <DropdownMenuItem onClick={(e) => handleArchive(e)}>
               <Archive className="h-4 w-4 mr-2" />
               {bookmark.isArchived ? "Unarchive" : "Archive"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={handleDelete}
+              onClick={(e) => handleDelete(e)}
               className="text-destructive focus:text-destructive"
             >
               <Trash2 className="h-4 w-4 mr-2" />

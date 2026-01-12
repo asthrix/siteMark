@@ -237,12 +237,13 @@ export function TopBar({
                 className="shrink-0"
                 onClick={() => setCommandMenuOpen(true)}
               >
-                <Command className="h-4 w-4" />
+                {/* <Command className="h-4 w-4" /> */}
+                <kbd className=" rounded  px-1 text-base">⌘K</kbd>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               Command menu{" "}
-              <kbd className="ml-1 rounded border bg-muted px-1 text-xs">⌘K</kbd>
+              <kbd className="ml-1 rounded border bg-muted px-1 text-base text-muted-foreground">⌘K</kbd>
             </TooltipContent>
           </Tooltip>
 

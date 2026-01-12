@@ -63,8 +63,9 @@ export function BookmarkGrid({
 
   return (
     <motion.div
+      key={children ? React.Children.count(children) : 0}
       variants={containerVariants}
-      initial="hidden"
+      initial={false}
       animate="show"
       className={cn("grid", gridClasses[columns], gapClasses[gap], className)}
     >

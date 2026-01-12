@@ -43,7 +43,7 @@ function CollectionCard({ collection, onEdit, onDelete }: CollectionCardProps) {
       whileTap={cardHover.tap}
     >
       <Card className="group relative overflow-hidden cursor-pointer h-full">
-        <Link href={`/dashboard/collections/${collection.id}`}>
+        <Link href={`/collections/${collection.id}`}>
           <CardContent className="p-6">
             {/* Icon */}
             <div
@@ -115,6 +115,19 @@ function CollectionCard({ collection, onEdit, onDelete }: CollectionCardProps) {
 }
 
 // ============================================================================
+// COLLECTION TYPE
+// ============================================================================
+interface CollectionType {
+  id: string;
+  name: string;
+  description?: string | null;
+  color?: string | null;
+  icon?: string | null;
+  isPublic: boolean;
+  _count: { bookmarks: number };
+}
+
+// ============================================================================
 // COLLECTIONS PAGE
 // ============================================================================
 export default function CollectionsPage() {
@@ -122,11 +135,11 @@ export default function CollectionsPage() {
   const deleteCollection = useDeleteCollection();
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCollection, setEditingCollection] = useState<typeof collections extends (infer T)[] | undefined ? T | null : never>(null);
+  const [editingCollection, setEditingCollection] = useState<CollectionType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingCollection, setDeletingCollection] = useState<{id: string; name: string} | null>(null);
 
-  const handleEdit = (collection: NonNullable<typeof editingCollection>) => {
+  const handleEdit = (collection: CollectionType) => {
     setEditingCollection(collection);
     setDialogOpen(true);
   };
@@ -201,7 +214,7 @@ export default function CollectionsPage() {
             animate="visible"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
           >
-            {collections.map((collection) => (
+            {collections.map((collection: CollectionType) => (
               <CollectionCard
                 key={collection.id}
                 collection={collection}
