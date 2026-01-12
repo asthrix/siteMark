@@ -1,19 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
 import {
   Bookmark,
   Star,
   Archive,
   FolderOpen,
-  Tag,
   Settings,
   ChevronLeft,
   Plus,
-  LogOut,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,63 +25,91 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { useUIStore } from "@/store/ui-store";
-import { useFilterStore } from "@/store/filter-store";
 import { useCollections } from "@/hooks/use-collections";
-import { useTags } from "@/hooks/use-tags";
+import { useTags, useDeleteTag } from "@/hooks/use-tags";
 import { cn } from "@/lib/utils";
+import { CollectionDialog } from "@/components/collection/collection-dialog";
+import { TagDialog } from "@/components/tag/tag-dialog";
+import { DeleteDialog } from "@/components/ui/delete-dialog";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+interface TagData {
+  id: string;
+  name: string;
+  color?: string | null;
+}
 
 // ============================================================================
 // SIDEBAR
 // ============================================================================
-// Navigation sidebar with collections and tags
-
 export function Sidebar() {
   const pathname = usePathname();
   const { isSidebarCollapsed, toggleSidebarCollapse } = useUIStore();
-  const {
-    showFavorites,
-    showArchived,
-    setShowFavorites,
-    setShowArchived,
-    selectedCollection,
-    setSelectedCollection,
-    selectedTags,
-    toggleTag,
-    resetFilters,
-  } = useFilterStore();
   const { data: collections } = useCollections();
   const { data: tags } = useTags();
+  const deleteTag = useDeleteTag();
+
+  // Dialog states
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<TagData | null>(null);
+  const [deleteTagDialogOpen, setDeleteTagDialogOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<TagData | null>(null);
 
   const navItems = [
     {
       icon: Bookmark,
       label: "All Bookmarks",
-      href: "/",
-      isActive: pathname === "/" && !showFavorites && !showArchived,
-      onClick: () => resetFilters(),
+      href: "/bookmarks",
+      isActive: pathname === "/bookmarks",
     },
     {
       icon: Star,
       label: "Favorites",
-      href: "/",
-      isActive: showFavorites,
-      onClick: () => {
-        resetFilters();
-        setShowFavorites(true);
-      },
+      href: "/favorites",
+      isActive: pathname === "/favorites",
     },
     {
       icon: Archive,
       label: "Archived",
-      href: "/",
-      isActive: showArchived,
-      onClick: () => {
-        resetFilters();
-        setShowArchived(true);
-      },
+      href: "/archived",
+      isActive: pathname === "/archived",
     },
   ];
+
+  const handleEditTag = (tag: TagData) => {
+    setEditingTag(tag);
+    setTagDialogOpen(true);
+  };
+
+  const handleDeleteTagClick = (tag: TagData) => {
+    setTagToDelete(tag);
+    setDeleteTagDialogOpen(true);
+  };
+
+  const handleConfirmDeleteTag = async () => {
+    if (tagToDelete) {
+      await deleteTag.mutateAsync(tagToDelete.id);
+      setDeleteTagDialogOpen(false);
+      setTagToDelete(null);
+    }
+  };
+
+  const handleTagDialogClose = (open: boolean) => {
+    setTagDialogOpen(open);
+    if (!open) {
+      setEditingTag(null);
+    }
+  };
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -141,7 +169,6 @@ export function Sidebar() {
                   <TooltipTrigger asChild>
                     <Link
                       href={item.href}
-                      onClick={item.onClick}
                       className={cn(
                         "flex h-10 items-center justify-center rounded-lg",
                         "transition-colors duration-200",
@@ -159,7 +186,6 @@ export function Sidebar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={item.onClick}
                   className={cn(
                     "flex h-10 items-center gap-3 rounded-lg px-3",
                     "transition-colors duration-200",
@@ -175,7 +201,7 @@ export function Sidebar() {
           </nav>
 
           {/* Collections Section */}
-          {!isSidebarCollapsed && collections && collections.length > 0 && (
+          {!isSidebarCollapsed && (
             <>
               <Separator className="my-4" />
               <div className="space-y-2">
@@ -183,44 +209,60 @@ export function Sidebar() {
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Collections
                   </h3>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setCollectionDialogOpen(true)}
+                  >
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
                 <nav className="space-y-1">
-                  {collections.map((collection) => (
+                  {collections && collections.length > 0 ? (
+                    collections.map((collection) => (
+                      <Link
+                        key={collection.id}
+                        href={`/collections/${collection.id}`}
+                        className={cn(
+                          "flex h-9 items-center gap-3 rounded-lg px-3",
+                          "transition-colors duration-200",
+                          pathname === `/collections/${collection.id}`
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        )}
+                      >
+                        <div
+                          className="h-3 w-3 rounded-sm shrink-0"
+                          style={{ backgroundColor: collection.color || "#6366f1" }}
+                        />
+                        <span className="truncate flex-1">{collection.name}</span>
+                        <Badge variant="secondary" className="text-xs h-5 px-1.5">
+                          {collection._count.bookmarks}
+                        </Badge>
+                      </Link>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground px-3 py-2">
+                      No collections yet
+                    </p>
+                  )}
+                  {(collections?.length ?? 0) > 0 && (
                     <Link
-                      key={collection.id}
-                      href="/"
-                      onClick={() => {
-                        resetFilters();
-                        setSelectedCollection(collection.id);
-                      }}
-                      className={cn(
-                        "flex h-9 items-center gap-3 rounded-lg px-3",
-                        "transition-colors duration-200",
-                        selectedCollection === collection.id
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                      )}
+                      href="/collections"
+                      className="flex h-9 items-center gap-3 rounded-lg px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
                     >
-                      <div
-                        className="h-3 w-3 rounded-sm shrink-0"
-                        style={{ backgroundColor: collection.color || "#6366f1" }}
-                      />
-                      <span className="truncate flex-1">{collection.name}</span>
-                      <Badge variant="secondary" className="text-xs h-5 px-1.5">
-                        {collection._count.bookmarks}
-                      </Badge>
+                      <FolderOpen className="h-4 w-4" />
+                      <span className="text-sm">View all</span>
                     </Link>
-                  ))}
+                  )}
                 </nav>
               </div>
             </>
           )}
 
           {/* Tags Section */}
-          {!isSidebarCollapsed && tags && tags.length > 0 && (
+          {!isSidebarCollapsed && (
             <>
               <Separator className="my-4" />
               <div className="space-y-2">
@@ -228,27 +270,54 @@ export function Sidebar() {
                   <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Tags
                   </h3>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      setEditingTag(null);
+                      setTagDialogOpen(true);
+                    }}
+                  >
                     <Plus className="h-3 w-3" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 px-3">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={selectedTags.includes(tag.id) ? "default" : "outline"}
-                      className="cursor-pointer text-xs transition-colors"
-                      style={{
-                        borderColor: tag.color || undefined,
-                        ...(selectedTags.includes(tag.id)
-                          ? { backgroundColor: tag.color || undefined }
-                          : { color: tag.color || undefined }),
-                      }}
-                      onClick={() => toggleTag(tag.id)}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
+                  {tags && tags.length > 0 ? (
+                    tags.slice(0, 10).map((tag) => (
+                      <ContextMenu key={tag.id}>
+                        <ContextMenuTrigger>
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer text-xs transition-colors hover:bg-accent"
+                            style={{
+                              borderColor: tag.color || undefined,
+                              color: tag.color || undefined,
+                            }}
+                          >
+                            {tag.name}
+                          </Badge>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-32">
+                          <ContextMenuItem onClick={() => handleEditTag(tag)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            onClick={() => handleDeleteTagClick(tag)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground py-2">
+                      No tags yet
+                    </p>
+                  )}
                 </div>
               </div>
             </>
@@ -260,23 +329,49 @@ export function Sidebar() {
           {isSidebarCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10">
-                  <Settings className="h-5 w-5" />
-                </Button>
+                <Link href="/settings">
+                  <Button variant="ghost" size="icon" className="h-10 w-10">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Settings</TooltipContent>
             </Tooltip>
           ) : (
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-10"
-            >
-              <Settings className="h-5 w-5" />
-              Settings
-            </Button>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start gap-3 h-10",
+                  pathname === "/settings" && "bg-sidebar-accent"
+                )}
+              >
+                <Settings className="h-5 w-5" />
+                Settings
+              </Button>
+            </Link>
           )}
         </div>
       </motion.aside>
+
+      {/* Dialogs */}
+      <CollectionDialog
+        open={collectionDialogOpen}
+        onOpenChange={setCollectionDialogOpen}
+      />
+      <TagDialog
+        open={tagDialogOpen}
+        onOpenChange={handleTagDialogClose}
+        tag={editingTag}
+      />
+      <DeleteDialog
+        open={deleteTagDialogOpen}
+        onOpenChange={setDeleteTagDialogOpen}
+        onConfirm={handleConfirmDeleteTag}
+        title="Delete Tag"
+        description={`Are you sure you want to delete "${tagToDelete?.name}"? This will remove the tag from all bookmarks.`}
+        isLoading={deleteTag.isPending}
+      />
     </TooltipProvider>
   );
 }

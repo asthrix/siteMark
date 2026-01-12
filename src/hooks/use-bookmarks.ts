@@ -17,7 +17,30 @@ import {
   type CreateBookmarkInput,
   type UpdateBookmarkInput,
 } from "@/app/actions/bookmarks";
-import { useFilterStore } from "@/store/filter-store";
+
+// ============================================================================
+// TYPES
+// ============================================================================
+interface BookmarkData {
+  id: string;
+  url: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  faviconUrl: string | null;
+  domain: string | null;
+  isFavorite: boolean;
+  isArchived: boolean;
+  createdAt: Date;
+  tags: { tag: { id: string; name: string; color: string | null } }[];
+  collection?: { id: string; name: string; color: string | null } | null;
+}
+
+interface BookmarksResponse {
+  bookmarks: BookmarkData[];
+  total: number;
+  hasMore: boolean;
+}
 
 // ============================================================================
 // QUERY KEYS
@@ -34,26 +57,20 @@ export const bookmarkKeys = {
 // GET BOOKMARKS HOOK
 // ============================================================================
 export function useBookmarks(
-  overrideFilters?: Partial<BookmarkFilters>,
-  options?: Omit<UseQueryOptions<Awaited<ReturnType<typeof getBookmarks>>>, "queryKey" | "queryFn">
+  filters?: Partial<BookmarkFilters>,
+  options?: Omit<UseQueryOptions<BookmarksResponse>, "queryKey" | "queryFn">
 ) {
-  const filterStore = useFilterStore();
-
-  const filters: BookmarkFilters = {
-    search: filterStore.searchQuery || undefined,
-    tags: filterStore.selectedTags.length > 0 ? filterStore.selectedTags : undefined,
-    collectionId: filterStore.selectedCollection || undefined,
-    isFavorite: filterStore.showFavorites || undefined,
-    isArchived: filterStore.showArchived || undefined,
-    sortBy: filterStore.sortBy,
-    sortDirection: filterStore.sortDirection,
-    ...overrideFilters,
+  const queryFilters: BookmarkFilters = {
+    isArchived: false,
+    sortBy: "createdAt",
+    sortDirection: "desc",
+    ...filters,
   };
 
   return useQuery({
-    queryKey: bookmarkKeys.list(filters),
-    queryFn: () => getBookmarks(filters),
-    staleTime: 30000, // 30 seconds
+    queryKey: bookmarkKeys.list(queryFilters),
+    queryFn: () => getBookmarks(queryFilters),
+    staleTime: 10000, // 10 seconds
     ...options,
   });
 }
@@ -67,7 +84,7 @@ export function useCreateBookmark() {
   return useMutation({
     mutationFn: (input: CreateBookmarkInput) => createBookmark(input),
     onSuccess: () => {
-      // Invalidate all bookmark lists
+      // Invalidate all bookmark lists to show new bookmark
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.lists() });
     },
   });
@@ -81,34 +98,62 @@ export function useUpdateBookmark() {
 
   return useMutation({
     mutationFn: (input: UpdateBookmarkInput) => updateBookmark(input),
-    onSuccess: (data) => {
-      // Update the specific bookmark in cache
-      queryClient.setQueryData(bookmarkKeys.detail(data.id), data);
-      // Invalidate lists to refresh
+    onSuccess: () => {
+      // Invalidate to refresh all lists
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.lists() });
     },
   });
 }
 
 // ============================================================================
-// DELETE BOOKMARK HOOK
+// DELETE BOOKMARK HOOK - With Optimistic Update
 // ============================================================================
 export function useDeleteBookmark() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => deleteBookmark(id),
-    onSuccess: (_, id) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: bookmarkKeys.detail(id) });
-      // Invalidate lists to refresh
+    onMutate: async (deletedId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: bookmarkKeys.lists() });
+
+      // Snapshot previous values for rollback
+      const previousData = queryClient.getQueriesData<BookmarksResponse>({
+        queryKey: bookmarkKeys.lists(),
+      });
+
+      // Optimistically remove from all cached lists
+      queryClient.setQueriesData<BookmarksResponse>(
+        { queryKey: bookmarkKeys.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            bookmarks: old.bookmarks.filter((b) => b.id !== deletedId),
+            total: old.total - 1,
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    onError: (_err, _id, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
+      // Always refetch after mutation settles
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.lists() });
     },
   });
 }
 
 // ============================================================================
-// TOGGLE FAVORITE HOOK
+// TOGGLE FAVORITE HOOK - With Optimistic Update
 // ============================================================================
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
@@ -116,16 +161,16 @@ export function useToggleFavorite() {
   return useMutation({
     mutationFn: (id: string) => toggleFavorite(id),
     onMutate: async (id) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: bookmarkKeys.lists() });
 
-      // Snapshot previous data for rollback
-      const previousData = queryClient.getQueriesData({ queryKey: bookmarkKeys.lists() });
+      const previousData = queryClient.getQueriesData<BookmarksResponse>({
+        queryKey: bookmarkKeys.lists(),
+      });
 
-      // Optimistically update
-      queryClient.setQueriesData(
+      // Optimistically toggle favorite
+      queryClient.setQueriesData<BookmarksResponse>(
         { queryKey: bookmarkKeys.lists() },
-        (old: Awaited<ReturnType<typeof getBookmarks>> | undefined) => {
+        (old) => {
           if (!old) return old;
           return {
             ...old,
@@ -140,8 +185,7 @@ export function useToggleFavorite() {
 
       return { previousData };
     },
-    onError: (_, __, context) => {
-      // Rollback on error
+    onError: (_err, _id, context) => {
       if (context?.previousData) {
         context.previousData.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
@@ -149,21 +193,49 @@ export function useToggleFavorite() {
       }
     },
     onSettled: () => {
-      // Refetch after mutation
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.lists() });
     },
   });
 }
 
 // ============================================================================
-// TOGGLE ARCHIVE HOOK
+// TOGGLE ARCHIVE HOOK - With Optimistic Update
 // ============================================================================
 export function useToggleArchive() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => toggleArchive(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: bookmarkKeys.lists() });
+
+      const previousData = queryClient.getQueriesData<BookmarksResponse>({
+        queryKey: bookmarkKeys.lists(),
+      });
+
+      // Optimistically toggle archive (and remove from current list)
+      queryClient.setQueriesData<BookmarksResponse>(
+        { queryKey: bookmarkKeys.lists() },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            bookmarks: old.bookmarks.filter((b) => b.id !== id),
+            total: old.total - 1,
+          };
+        }
+      );
+
+      return { previousData };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: bookmarkKeys.lists() });
     },
   });

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBookmarks } from "@/hooks/use-bookmarks";
 import { useUIStore } from "@/store/ui-store";
-import { useFilterStore } from "@/store/filter-store";
 
 // ============================================================================
 // LOADING SKELETON
@@ -67,22 +66,33 @@ function EmptyState() {
 }
 
 // ============================================================================
-// DASHBOARD PAGE
+// BOOKMARK TYPE
 // ============================================================================
-export default function DashboardPage() {
-  const { viewMode } = useUIStore();
-  const { showFavorites, showArchived } = useFilterStore();
-  const { data, isLoading, error } = useBookmarks();
+interface BookmarkType {
+  id: string;
+  url: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  faviconUrl: string | null;
+  domain: string | null;
+  isFavorite: boolean;
+  isArchived: boolean;
+  tags: { tag: { id: string; name: string; color: string | null } }[];
+  collection?: { id: string; name: string; color: string | null } | null;
+}
 
-  // Determine title based on filters
-  let title = "All Bookmarks";
-  if (showFavorites) title = "Favorites";
-  if (showArchived) title = "Archived";
+// ============================================================================
+// BOOKMARKS PAGE
+// ============================================================================
+export default function BookmarksPage() {
+  const { viewMode } = useUIStore();
+  const { data, isLoading, error } = useBookmarks({ isArchived: false });
 
   return (
     <div className="flex flex-col h-full">
       {/* Top Bar */}
-      <TopBar title={title} />
+      <TopBar title="All Bookmarks" />
 
       {/* Content */}
       <div className="flex-1 p-6">
@@ -115,13 +125,13 @@ export default function DashboardPage() {
           <>
             {viewMode === "grid" ? (
               <MasonryGrid columns={4} gap="md">
-                {data.bookmarks.map((bookmark) => (
+                {data.bookmarks.map((bookmark: BookmarkType) => (
                   <BookmarkCard key={bookmark.id} bookmark={bookmark} />
                 ))}
               </MasonryGrid>
             ) : (
               <div className="space-y-3 max-w-4xl">
-                {data.bookmarks.map((bookmark) => (
+                {data.bookmarks.map((bookmark: BookmarkType) => (
                   <BookmarkCard key={bookmark.id} bookmark={bookmark} />
                 ))}
               </div>
@@ -130,7 +140,6 @@ export default function DashboardPage() {
             {/* Bookmark count */}
             <div className="mt-8 text-center text-sm text-muted-foreground">
               {data.total} bookmark{data.total !== 1 ? "s" : ""}
-              {data.hasMore && " • Load more"}
             </div>
           </>
         )}

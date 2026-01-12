@@ -50,6 +50,25 @@ export interface CreateTagInput {
 export async function createTag(input: CreateTagInput) {
   const user = await getCurrentUser();
 
+  // Check if tag already exists for this user
+  const existingTag = await prisma.tag.findFirst({
+    where: {
+      name: input.name,
+      userId: user.id,
+    },
+    include: {
+      _count: {
+        select: { bookmarks: true },
+      },
+    },
+  });
+
+  // Return existing tag if found (no error, just return it)
+  if (existingTag) {
+    return existingTag;
+  }
+
+  // Create new tag
   const tag = await prisma.tag.create({
     data: {
       name: input.name,

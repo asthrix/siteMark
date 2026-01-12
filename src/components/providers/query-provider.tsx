@@ -19,14 +19,16 @@ export function QueryProvider({ children }: QueryProviderProps) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            // With SSR, we usually want to set some default staleTime
-            // above 0 to avoid refetching immediately on the client
-            staleTime: 60 * 1000, // 1 minute
-            refetchOnWindowFocus: false,
+            // Short stale time for responsive updates
+            staleTime: 10 * 1000, // 10 seconds
+            // Refetch on window focus for fresh data
+            refetchOnWindowFocus: true,
+            // Retry once on failure
             retry: 1,
+            // Keep previous data while refetching
+            placeholderData: (prev: unknown) => prev,
           },
           mutations: {
-            // Retry mutations once on failure
             retry: 1,
           },
         },

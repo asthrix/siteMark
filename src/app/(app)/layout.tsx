@@ -3,8 +3,9 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { CommandMenu } from "@/components/layout/command-menu";
 import { AddBookmarkDialog } from "@/components/bookmark/add-bookmark-dialog";
+import { EditBookmarkDialog } from "@/components/bookmark/edit-bookmark-dialog";
 
-export default function DashboardLayout({
+export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export default function DashboardLayout({
       {/* Global Dialogs */}
       <CommandMenu />
       <AddBookmarkDialog />
+      <EditBookmarkDialog />
     </div>
   );
 }

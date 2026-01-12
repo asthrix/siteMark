@@ -2,11 +2,12 @@
 
 import React from "react";
 import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 // ============================================================================
-// MASONRY GRID
+// BOOKMARK GRID
 // ============================================================================
-// CSS columns-based masonry layout with Framer Motion stagger animations
+// Uniform CSS Grid layout with Framer Motion stagger animations
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,31 +34,31 @@ const itemVariants = {
   },
 };
 
-interface MasonryGridProps {
+interface BookmarkGridProps {
   children: React.ReactNode;
   columns?: 1 | 2 | 3 | 4 | 5;
   gap?: "sm" | "md" | "lg";
   className?: string;
 }
 
-export function MasonryGrid({
+export function BookmarkGrid({
   children,
   columns = 4,
   gap = "md",
   className = "",
-}: MasonryGridProps) {
+}: BookmarkGridProps) {
   const gapClasses = {
-    sm: "gap-2",
+    sm: "gap-3",
     md: "gap-4",
     lg: "gap-6",
   };
 
-  const columnClasses = {
-    1: "columns-1",
-    2: "columns-1 sm:columns-2",
-    3: "columns-1 sm:columns-2 lg:columns-3",
-    4: "columns-1 sm:columns-2 lg:columns-3 xl:columns-4",
-    5: "columns-1 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5",
+  const gridClasses = {
+    1: "grid-cols-1",
+    2: "grid-cols-1 sm:grid-cols-2",
+    3: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+    4: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+    5: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
   };
 
   return (
@@ -65,14 +66,10 @@ export function MasonryGrid({
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className={`${columnClasses[columns]} ${gapClasses[gap]} ${className}`}
+      className={cn("grid", gridClasses[columns], gapClasses[gap], className)}
     >
       {React.Children.map(children, (child, index) => (
-        <motion.div
-          key={index}
-          variants={itemVariants}
-          className="break-inside-avoid mb-4"
-        >
+        <motion.div key={index} variants={itemVariants}>
           {child}
         </motion.div>
       ))}
@@ -80,20 +77,14 @@ export function MasonryGrid({
   );
 }
 
-// ============================================================================
-// MASONRY ITEM (for custom animations)
-// ============================================================================
-interface MasonryItemProps {
-  children: React.ReactNode;
-  className?: string;
+// Keep MasonryGrid for backward compatibility but just use the grid
+export function MasonryGrid(props: BookmarkGridProps) {
+  return <BookmarkGrid {...props} />;
 }
 
-export function MasonryItem({ children, className = "" }: MasonryItemProps) {
+export function MasonryItem({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <motion.div
-      variants={itemVariants}
-      className={`break-inside-avoid mb-4 ${className}`}
-    >
+    <motion.div variants={itemVariants} className={className}>
       {children}
     </motion.div>
   );

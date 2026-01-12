@@ -1,16 +1,19 @@
 "use client";
 
-import { motion } from "motion/react";
+import { useState } from "react";
 import Image from "next/image";
+import { motion } from "motion/react";
 import {
-  Star,
+  Heart,
   ExternalLink,
+  MoreHorizontal,
   Archive,
   Trash2,
-  MoreHorizontal,
   Pencil,
+  Globe,
+  CheckCircle2,
 } from "lucide-react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,32 +24,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useToggleFavorite, useToggleArchive, useDeleteBookmark } from "@/hooks/use-bookmarks";
+  useToggleFavorite,
+  useToggleArchive,
+  useDeleteBookmark,
+} from "@/hooks/use-bookmarks";
 import { useUIStore } from "@/store/ui-store";
-import { cn } from "@/lib/utils";
 
 // ============================================================================
 // TYPES
 // ============================================================================
-interface BookmarkTag {
-  tag: {
-    id: string;
-    name: string;
-    color: string | null;
-  };
-}
-
-interface BookmarkCollection {
-  id: string;
-  name: string;
-  color: string | null;
-}
-
 interface Bookmark {
   id: string;
   url: string;
@@ -57,29 +43,28 @@ interface Bookmark {
   domain: string | null;
   isFavorite: boolean;
   isArchived: boolean;
-  createdAt: Date;
-  tags: BookmarkTag[];
-  collection: BookmarkCollection | null;
+  tags: { tag: { id: string; name: string; color: string | null } }[];
+  collection?: { id: string; name: string; color: string | null } | null;
 }
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
+  className?: string;
 }
 
 // ============================================================================
-// BOOKMARK CARD COMPONENT
+// BOOKMARK CARD - 21st.dev Style
 // ============================================================================
-export function BookmarkCard({ bookmark }: BookmarkCardProps) {
-  const { openEditBookmark } = useUIStore();
+export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+
   const toggleFavorite = useToggleFavorite();
   const toggleArchive = useToggleArchive();
   const deleteBookmark = useDeleteBookmark();
-
-  const handleOpenUrl = () => {
-    window.open(bookmark.url, "_blank", "noopener,noreferrer");
-  };
+  const { openEditBookmark } = useUIStore();
 
   const handleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     toggleFavorite.mutate(bookmark.id);
   };
@@ -89,190 +74,205 @@ export function BookmarkCard({ bookmark }: BookmarkCardProps) {
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this bookmark?")) {
-      deleteBookmark.mutate(bookmark.id);
-    }
+    deleteBookmark.mutate(bookmark.id);
+  };
+
+  const handleEdit = () => {
+    openEditBookmark(bookmark.id);
+  };
+
+  const handleOpen = () => {
+    window.open(bookmark.url, "_blank", "noopener,noreferrer");
   };
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <motion.div
-        whileHover={{ y: -4, scale: 1.01 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{
-          type: "spring",
-          damping: 25,
-          stiffness: 400,
-        }}
-      >
-        <Card
-          className={cn(
-            "group relative overflow-hidden cursor-pointer",
-            "border-2 border-border/50 hover:border-primary/50",
-            "bg-card/80 backdrop-blur-sm",
-            "transition-all duration-300 ease-out",
-            "shadow-lg shadow-background/50 hover:shadow-primary/20"
-          )}
-          onClick={handleOpenUrl}
-        >
-          {/* Thumbnail */}
-          {bookmark.imageUrl && (
-            <div className="relative aspect-video overflow-hidden">
+    <motion.div
+      className={cn(
+        "group relative rounded-xl overflow-hidden cursor-pointer",
+        "bg-card border border-border",
+        "shadow-md",
+        "transition-all duration-300",
+        "hover:shadow-xl hover:border-primary/30",
+        className
+      )}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={handleOpen}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* Header - Domain info + Actions */}
+      <div className="flex items-center justify-between p-3 pb-0">
+        <div className="flex items-center gap-2">
+          {/* Favicon */}
+          <div className="relative h-6 w-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+            {bookmark.faviconUrl ? (
               <Image
-                src={bookmark.imageUrl}
-                alt={bookmark.title || "Bookmark thumbnail"}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                src={bookmark.faviconUrl}
+                alt=""
+                width={16}
+                height={16}
+                className="rounded-sm"
               />
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-60" />
-
-              {/* Favorite button */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className={cn(
-                      "absolute top-2 right-2 z-10",
-                      "bg-background/80 backdrop-blur-sm",
-                      "opacity-0 group-hover:opacity-100 transition-opacity",
-                      "hover:bg-background/90"
-                    )}
-                    onClick={handleFavorite}
-                  >
-                    <Star
-                      className={cn(
-                        "h-4 w-4 transition-colors",
-                        bookmark.isFavorite
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-muted-foreground"
-                      )}
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {bookmark.isFavorite ? "Remove from favorites" : "Add to favorites"}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          )}
-
-          <CardContent className="p-4 space-y-3">
-            {/* Domain with favicon */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0">
-                {bookmark.faviconUrl && (
-                  <Image
-                    src={bookmark.faviconUrl}
-                    alt=""
-                    width={14}
-                    height={14}
-                    className="rounded-sm flex-shrink-0"
-                  />
-                )}
-                <span className="text-xs text-muted-foreground truncate">
-                  {bookmark.domain}
-                </span>
-              </div>
-
-              {/* Actions dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className={cn(
-                      "h-6 w-6 opacity-0 group-hover:opacity-100",
-                      "transition-opacity"
-                    )}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditBookmark(bookmark.id); }}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleOpenUrl(); }}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Open in new tab
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleArchive(); }}>
-                    <Archive className="h-4 w-4 mr-2" />
-                    {bookmark.isArchived ? "Unarchive" : "Archive"}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Title */}
-            <h3 className="font-semibold text-foreground line-clamp-2 leading-tight">
-              {bookmark.title || bookmark.url}
-            </h3>
-
-            {/* Description */}
-            {bookmark.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {bookmark.description}
-              </p>
+            ) : (
+              <Globe className="h-3.5 w-3.5 text-muted-foreground" />
             )}
-          </CardContent>
+          </div>
+          {/* Domain */}
+          <span className="text-sm font-medium text-foreground truncate max-w-[140px]">
+            {bookmark.domain || "Unknown"}
+          </span>
+          {/* Verified badge */}
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+        </div>
 
-          {/* Tags & Collection */}
-          {(bookmark.tags.length > 0 || bookmark.collection) && (
-            <CardFooter className="p-4 pt-0 flex flex-wrap gap-1.5">
-              {bookmark.collection && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs"
-                  style={{
-                    backgroundColor: `${bookmark.collection.color}20`,
-                    borderColor: bookmark.collection.color || undefined,
-                    color: bookmark.collection.color || undefined,
-                  }}
-                >
-                  {bookmark.collection.name}
-                </Badge>
-              )}
-              {bookmark.tags.slice(0, 3).map(({ tag }) => (
-                <Badge
-                  key={tag.id}
-                  variant="outline"
-                  className="text-xs"
-                  style={{
-                    borderColor: tag.color || undefined,
-                    color: tag.color || undefined,
-                  }}
-                >
-                  {tag.name}
-                </Badge>
-              ))}
-              {bookmark.tags.length > 3 && (
-                <Badge variant="outline" className="text-xs">
-                  +{bookmark.tags.length - 3}
-                </Badge>
-              )}
-            </CardFooter>
-          )}
+        {/* Collection badge */}
+        {bookmark.collection ? (
+          <Badge
+            variant="secondary"
+            className="text-xs font-normal h-6 px-2"
+            style={{
+              backgroundColor: `${bookmark.collection.color}20` || undefined,
+              color: bookmark.collection.color || undefined,
+              borderColor: `${bookmark.collection.color}40` || undefined,
+            }}
+          >
+            {bookmark.collection.name}
+          </Badge>
+        ) : (
+          <Badge variant="secondary" className="text-xs font-normal h-6 px-2">
+            Bookmark
+          </Badge>
+        )}
+      </div>
 
-          {/* No image placeholder */}
-          {!bookmark.imageUrl && (
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-chart-2 to-chart-4" />
+      {/* Thumbnail - Large centered */}
+      <div className="relative mx-3 mt-3 rounded-lg overflow-hidden bg-muted aspect-[16/10]">
+        {bookmark.imageUrl ? (
+          <Image
+            src={bookmark.imageUrl}
+            alt={bookmark.title || "Bookmark thumbnail"}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className={cn(
+              "object-cover transition-transform duration-500",
+              isHovered && "scale-[1.02]"
+            )}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Globe className="h-12 w-12 text-muted-foreground/30" />
+          </div>
+        )}
+
+        {/* Favorite button - Overlay */}
+        <motion.button
+          onClick={handleFavorite}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isHovered || bookmark.isFavorite ? 1 : 0 }}
+          className={cn(
+            "absolute top-2 right-2 p-1.5 rounded-full",
+            "bg-rose-100 backdrop-blur-sm",
+            "border border-border/50",
+            "transition-colors",
+            bookmark.isFavorite ? "text-rose-500" : "text-muted-foreground hover:text-foreground"
           )}
-        </Card>
-      </motion.div>
-    </TooltipProvider>
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Heart className={cn("h-4 w-4", bookmark.isFavorite && "fill-current")} />
+        </motion.button>
+      </div>
+
+      {/* Content */}
+      <div className="p-3 space-y-2">
+        {/* Title */}
+        <h3 className="font-medium text-sm leading-snug line-clamp-1 text-foreground">
+          {bookmark.title || bookmark.url}
+        </h3>
+
+        {/* Description */}
+        {bookmark.description && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {bookmark.description}
+          </p>
+        )}
+
+        {/* Tags */}
+        
+      </div>
+
+      {/* Footer - Actions */}
+      <div className="flex items-center justify-between gap-1 px-3 pb-3">
+        <div className="">
+          {bookmark.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {bookmark.tags.slice(0, 3).map(({ tag }) => (
+              <Badge
+                key={tag.id}
+                variant="outline"
+                className="text-[10px] h-5 px-1.5 font-normal border-border/60"
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full mr-1"
+                  style={{ backgroundColor: tag.color || "#6366f1" }}
+                />
+                {tag.name}
+              </Badge>
+            ))}
+            {bookmark.tags.length > 3 && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal">
+                +{bookmark.tags.length - 3}
+              </Badge>
+            )}
+          </div>
+        )}
+        </div>
+
+        <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpen();
+          }}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={handleEdit}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleArchive}>
+              <Archive className="h-4 w-4 mr-2" />
+              {bookmark.isArchived ? "Unarchive" : "Archive"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        </div>
+      </div>
+    </motion.div>
   );
 }
