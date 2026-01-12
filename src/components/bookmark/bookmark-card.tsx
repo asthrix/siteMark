@@ -147,7 +147,7 @@ export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
       </div>
 
       {/* Thumbnail - Large centered */}
-      <div className="relative mx-3 mt-3 rounded-lg overflow-hidden bg-muted aspect-[16/10]">
+      <div className="relative mx-3 mt-3 rounded-lg overflow-hidden bg-muted aspect-16/10">
         {bookmark.imageUrl ? (
           <Image
             src={bookmark.imageUrl}

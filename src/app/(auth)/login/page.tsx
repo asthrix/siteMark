@@ -46,7 +46,7 @@ export default function LoginPage() {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="mx-auto relative"
           >
-            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-chart-2 flex items-center justify-center shadow-2xl glow-primary">
+            <div className="h-20 w-20 rounded-2xl bg-linear-to-br from-primary to-chart-2 flex items-center justify-center shadow-2xl glow-primary">
               <Bookmark className="h-10 w-10 text-primary-foreground" />
             </div>
             <motion.div

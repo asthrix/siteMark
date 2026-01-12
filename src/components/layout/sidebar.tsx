@@ -48,6 +48,14 @@ interface TagData {
   color?: string | null;
 }
 
+interface CollectionData {
+  id: string;
+  name: string;
+  color?: string | null;
+  icon?: string | null;
+  _count: { bookmarks: number };
+}
+
 // ============================================================================
 // SIDEBAR
 // ============================================================================
@@ -220,7 +228,7 @@ export function Sidebar() {
                 </div>
                 <nav className="space-y-1">
                   {collections && collections.length > 0 ? (
-                    collections.map((collection) => (
+                    collections.map((collection: CollectionData) => (
                       <Link
                         key={collection.id}
                         href={`/collections/${collection.id}`}
@@ -284,7 +292,7 @@ export function Sidebar() {
                 </div>
                 <div className="flex flex-wrap gap-1.5 px-3">
                   {tags && tags.length > 0 ? (
-                    tags.slice(0, 10).map((tag) => (
+                    tags.slice(0, 10).map((tag: TagData) => (
                       <ContextMenu key={tag.id}>
                         <ContextMenuTrigger>
                           <Badge

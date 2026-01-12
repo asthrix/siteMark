@@ -5,7 +5,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen flex items-center justify-center animated-gradient noise">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-chart-2/5" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-chart-2/5" />
       {children}
     </div>
   );
