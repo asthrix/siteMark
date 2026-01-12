@@ -1,15 +1,16 @@
 // VisualMark Database Schema
 // A visual bookmark manager with collections, tags, and collaboration
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
 
 generator client {
   provider = "prisma-client-js"
 }
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+        
 
 // ============================================================================
 // USER MODEL
