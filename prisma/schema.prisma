@@ -1,0 +1,166 @@
+// VisualMark Database Schema
+// A visual bookmark manager with collections, tags, and collaboration
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================================
+// USER MODEL
+// ============================================================================
+model User {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  name              String?
+  avatarUrl         String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  // Relations
+  bookmarks         Bookmark[]
+  collections       Collection[]
+  tags              Tag[]
+  sharedCollections CollectionMember[]
+
+  @@map("users")
+}
+
+// ============================================================================
+// BOOKMARK MODEL
+// ============================================================================
+model Bookmark {
+  id           String        @id @default(cuid())
+  url          String
+  title        String?
+  description  String?       @db.Text
+  
+  // Visual metadata
+  imageUrl     String?       // OG image or generated screenshot
+  imageWidth   Int?
+  imageHeight  Int?
+  faviconUrl   String?
+  domain       String?
+  ogType       String?
+  
+  // Status flags
+  isFavorite   Boolean       @default(false)
+  isArchived   Boolean       @default(false)
+  
+  // Timestamps
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relations
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collectionId String?
+  collection   Collection?   @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  tags         BookmarkTag[]
+
+  // Indexes for performance
+  @@index([userId])
+  @@index([collectionId])
+  @@index([url])
+  @@index([domain])
+  @@index([isFavorite])
+  @@index([isArchived])
+  @@index([createdAt])
+  @@map("bookmarks")
+}
+
+// ============================================================================
+// COLLECTION MODEL (Folders)
+// ============================================================================
+model Collection {
+  id          String             @id @default(cuid())
+  name        String
+  description String?            @db.Text
+  color       String?            // Hex color for visual distinction
+  icon        String?            // Lucide icon name
+  isPublic    Boolean            @default(false)
+  
+  // Timestamps
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  
+  // Relations
+  userId      String
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks   Bookmark[]
+  members     CollectionMember[]
+
+  // Unique constraint: no duplicate names per user
+  @@unique([name, userId])
+  @@index([userId])
+  @@map("collections")
+}
+
+// ============================================================================
+// TAG MODEL
+// ============================================================================
+model Tag {
+  id        String        @id @default(cuid())
+  name      String
+  color     String?       // Hex color for visual distinction
+  
+  // Relations
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookmarks BookmarkTag[]
+
+  // Unique constraint: no duplicate tag names per user
+  @@unique([name, userId])
+  @@index([userId])
+  @@map("tags")
+}
+
+// ============================================================================
+// BOOKMARK-TAG JUNCTION TABLE
+// ============================================================================
+model BookmarkTag {
+  bookmarkId String
+  bookmark   Bookmark @relation(fields: [bookmarkId], references: [id], onDelete: Cascade)
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookmarkId, tagId])
+  @@index([bookmarkId])
+  @@index([tagId])
+  @@map("bookmark_tags")
+}
+
+// ============================================================================
+// COLLECTION MEMBER (Collaboration)
+// ============================================================================
+model CollectionMember {
+  id           String     @id @default(cuid())
+  role         MemberRole @default(VIEWER)
+  addedAt      DateTime   @default(now())
+  
+  // Relations
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Unique constraint: no duplicate members per collection
+  @@unique([collectionId, userId])
+  @@index([collectionId])
+  @@index([userId])
+  @@map("collection_members")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+enum MemberRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
