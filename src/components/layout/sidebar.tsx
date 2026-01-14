@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { CollectionDialog } from "@/components/collection/collection-dialog";
 import { TagDialog } from "@/components/tag/tag-dialog";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
+import Image from "next/image";
 
 // ============================================================================
 // TYPES
@@ -143,16 +144,22 @@ export function Sidebar() {
       >
         {/* Header */}
         <div className="flex h-16 items-center gap-3 border-b border-border/50 px-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Bookmark className="h-5 w-5" />
-          </div>
+          {/* <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"> */}
+            <Image
+              src="/images/logo.png"
+              alt="Logo"
+              width={20}
+              height={20}
+              className="size-9 rounded-full"
+            />
+          {/* </div> */}
           {!isSidebarCollapsed && (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="font-bold text-lg tracking-tight"
             >
-              VisualMark
+              SiteMark
             </motion.span>
           )}
           <Button

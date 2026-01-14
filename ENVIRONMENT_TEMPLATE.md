@@ -1,5 +1,5 @@
 # ============================================================================
-# VISUALMARK ENVIRONMENT VARIABLES
+# SiteMark ENVIRONMENT VARIABLES
 # ============================================================================
 # Copy this file to .env.local and fill in your values
 

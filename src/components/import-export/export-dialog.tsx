@@ -106,17 +106,17 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     switch (format) {
       case "json":
         content = exportToJson(exportData);
-        filename = `visualmark-export-${date}.json`;
+        filename = `SiteMark-export-${date}.json`;
         mimeType = "application/json";
         break;
       case "html":
         content = exportToHtml(exportData);
-        filename = `visualmark-bookmarks-${date}.html`;
+        filename = `SiteMark-bookmarks-${date}.html`;
         mimeType = "text/html";
         break;
       case "csv":
         content = exportToCsv(exportData);
-        filename = `visualmark-export-${date}.csv`;
+        filename = `SiteMark-export-${date}.csv`;
         mimeType = "text/csv";
         break;
     }

@@ -24,7 +24,7 @@ export async function scrapeMetadata(url: string): Promise<ScrapedMetadata> {
     const response = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; VisualMark/1.0; +https://visualmark.app)",
+          "Mozilla/5.0 (compatible; SiteMark/1.0; +https://SiteMark.app)",
         Accept: "text/html,application/xhtml+xml",
       },
       signal: AbortSignal.timeout(10000), // 10 second timeout

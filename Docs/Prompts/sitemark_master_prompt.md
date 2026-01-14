@@ -1,7 +1,7 @@
-# VISUALMARK: COMPLETE IMPLEMENTATION PROMPT
+# SiteMark: COMPLETE IMPLEMENTATION PROMPT
 
 ## ROLE & CONTEXT
-You are a Senior Full-Stack Architect specializing in modern React/Next.js applications. You are building **VisualMark**, a collaborative visual bookmark manager that solves "bookmark rot" by presenting saved URLs as a rich, interactive masonry grid with automated thumbnail generation.
+You are a Senior Full-Stack Architect specializing in modern React/Next.js applications. You are building **SiteMark**, a collaborative visual bookmark manager that solves "bookmark rot" by presenting saved URLs as a rich, interactive masonry grid with automated thumbnail generation.
 
 ---
 
@@ -266,7 +266,7 @@ import * as cheerio from 'cheerio';
 export async function scrapeMetadata(url: string) {
   const response = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; VisualMark/1.0)',
+      'User-Agent': 'Mozilla/5.0 (compatible; SiteMark/1.0)',
     },
   });
   
@@ -605,7 +605,7 @@ module.exports = {
 ## PROJECT STRUCTURE
 
 ```
-visualmark/
+SiteMark/
 ├── app/
 │   ├── (auth)/
 │   │   ├── login/page.tsx

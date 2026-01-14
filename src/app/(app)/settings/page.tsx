@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 Appearance
               </CardTitle>
               <CardDescription>
-                Customize how VisualMark looks.
+                Customize how SiteMark looks.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -169,7 +169,7 @@ export default function SettingsPage() {
                 <div className="space-y-0.5">
                   <Label>Analytics</Label>
                   <p className="text-xs text-muted-foreground">
-                    Help improve VisualMark with anonymous analytics
+                    Help improve SiteMark with anonymous analytics
                   </p>
                 </div>
                 <Switch />

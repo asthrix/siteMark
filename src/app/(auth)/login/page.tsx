@@ -60,7 +60,7 @@ export default function LoginPage() {
 
           <div className="space-y-2">
             <CardTitle className="text-3xl font-bold gradient-text">
-              VisualMark
+              SiteMark
             </CardTitle>
             <CardDescription className="text-base">
               Your visual bookmark manager with stunning previews

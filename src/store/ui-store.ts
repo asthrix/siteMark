@@ -82,7 +82,7 @@ export const useUIStore = create<UIStore>()(
       setGridColumns: (columns) => set({ gridColumns: columns }),
     }),
     {
-      name: "visualmark-ui",
+      name: "SiteMark-ui",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         // Only persist view preferences
