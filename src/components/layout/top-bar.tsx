@@ -6,9 +6,12 @@ import {
   Plus,
   LayoutGrid,
   List,
-  Command,
   SlidersHorizontal,
   ArrowUpDown,
+  Heart,
+  Archive,
+  Check,
+  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +22,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
@@ -59,6 +63,8 @@ export function TopBar({
     toggleSortDirection,
     showFavorites,
     showArchived,
+    toggleFavorites,
+    toggleArchived,
     resetFilters,
   } = useFilterStore();
 
@@ -141,7 +147,7 @@ export function TopBar({
           {/* Spacer */}
           <div className="flex-1" />
 
-          {/* Search */}
+          {/* Search with ⌘K button inside */}
           {showSearch && (
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -151,11 +157,14 @@ export function TopBar({
                 placeholder="Search bookmarks..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
-                className="pl-9 pr-12 bg-secondary/50 border-border/50"
+                className="pl-9 pr-16 bg-secondary/50 border-border/50"
               />
-              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium text-muted-foreground sm:flex">
-                /
-              </kbd>
+              <button
+                onClick={() => setCommandMenuOpen(true)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 hidden sm:flex h-6 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                ⌘K
+              </button>
             </div>
           )}
 
@@ -188,15 +197,47 @@ export function TopBar({
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* More filters */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0">
+              {/* Filter dropdown - Now functional */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className={cn(
+                      "shrink-0",
+                      (showFavorites || showArchived) && "border-primary text-primary"
+                    )}
+                  >
                     <SlidersHorizontal className="h-4 w-4" />
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>Filters</TooltipContent>
-              </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Filter by</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuCheckboxItem
+                    checked={showFavorites}
+                    onCheckedChange={() => toggleFavorites()}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    Favorites only
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={showArchived}
+                    onCheckedChange={() => toggleArchived()}
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archived only
+                  </DropdownMenuCheckboxItem>
+                  {(showFavorites || showArchived) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={resetFilters}>
+                        Clear filters
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
 
@@ -218,34 +259,17 @@ export function TopBar({
                       {mode === "grid" ? (
                         <LayoutGrid className="h-4 w-4" />
                       ) : (
-                        <List className="h-4 w-4" />
+                        <Table2 className="h-4 w-4" />
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="capitalize">{mode} view</TooltipContent>
+                  <TooltipContent className="capitalize">
+                    {mode === "list" ? "Table view" : "Grid view"}
+                  </TooltipContent>
                 </Tooltip>
               ))}
             </div>
           )}
-
-          {/* Command menu trigger */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                onClick={() => setCommandMenuOpen(true)}
-              >
-                {/* <Command className="h-4 w-4" /> */}
-                <kbd className=" rounded  px-1 text-base">⌘K</kbd>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Command menu{" "}
-              <kbd className="ml-1 rounded border bg-muted px-1 text-base text-muted-foreground">⌘K</kbd>
-            </TooltipContent>
-          </Tooltip>
 
           {/* Add bookmark button */}
           <Button onClick={() => setAddBookmarkOpen(true)} className="shrink-0 gap-2">

@@ -150,7 +150,7 @@ export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
       </div>
 
       {/* Thumbnail - Large centered */}
-      <div className="relative mx-3 mt-3 rounded-lg overflow-hidden bg-muted aspect-16/10">
+      <div className="relative mx-2 mt-3 rounded-lg overflow-hidden bg-muted aspect-video">
         {bookmark.imageUrl ? (
           <Image
             src={bookmark.imageUrl}
@@ -158,8 +158,8 @@ export function BookmarkCard({ bookmark, className }: BookmarkCardProps) {
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className={cn(
-              "object-cover transition-transform duration-500",
-              isHovered && "scale-[1.02]"
+              "object-cover transition-transform duration-500 border border-border rounded-lg",
+              isHovered && "scale-[1.02] "
             )}
           />
         ) : (

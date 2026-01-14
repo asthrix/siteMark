@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { TopBar } from "@/components/layout/top-bar";
 import { MasonryGrid } from "@/components/layout/masonry-grid";
 import { BookmarkCard } from "@/components/bookmark/bookmark-card";
+import { BookmarkTable } from "@/components/bookmark/bookmark-table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBookmarks } from "@/hooks/use-bookmarks";
@@ -22,6 +23,24 @@ function BookmarkSkeleton() {
         <Skeleton className="h-4 w-20" />
         <Skeleton className="h-5 w-full" />
         <Skeleton className="h-4 w-3/4" />
+      </div>
+    </div>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="rounded-lg border">
+      <div className="p-4 space-y-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4">
+            <Skeleton className="h-8 w-8 rounded-lg" />
+            <Skeleton className="h-4 flex-1" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -79,6 +98,7 @@ interface BookmarkType {
   domain: string | null;
   isFavorite: boolean;
   isArchived: boolean;
+  createdAt?: Date | string;
   tags: { tag: { id: string; name: string; color: string | null } }[];
   collection?: { id: string; name: string; color: string | null } | null;
 }
@@ -88,9 +108,10 @@ interface BookmarkType {
 // ============================================================================
 export default function BookmarksPage() {
   const { viewMode } = useUIStore();
-  const { selectedTags } = useFilterStore();
+  const { selectedTags, showFavorites, showArchived } = useFilterStore();
   const { data, isLoading, error } = useBookmarks({
-    isArchived: false,
+    isArchived: showArchived || false,
+    isFavorite: showFavorites || undefined,
     tags: selectedTags.length > 0 ? selectedTags : undefined,
   });
 
@@ -103,13 +124,19 @@ export default function BookmarksPage() {
       <div className="flex-1 p-6">
         {/* Loading State */}
         {isLoading && (
-          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="break-inside-avoid mb-4">
-                <BookmarkSkeleton />
+          <>
+            {viewMode === "grid" ? (
+              <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="break-inside-avoid mb-4">
+                    <BookmarkSkeleton />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <TableSkeleton />
+            )}
+          </>
         )}
 
         {/* Error State */}
@@ -125,7 +152,7 @@ export default function BookmarksPage() {
         {/* Empty State */}
         {!isLoading && !error && data?.bookmarks.length === 0 && <EmptyState />}
 
-        {/* Bookmarks Grid */}
+        {/* Bookmarks Grid or Table */}
         {!isLoading && !error && data && data.bookmarks.length > 0 && (
           <>
             {viewMode === "grid" ? (
@@ -135,11 +162,7 @@ export default function BookmarksPage() {
                 ))}
               </MasonryGrid>
             ) : (
-              <div className="space-y-3 max-w-4xl">
-                {data.bookmarks.map((bookmark: BookmarkType) => (
-                  <BookmarkCard key={bookmark.id} bookmark={bookmark} />
-                ))}
-              </div>
+              <BookmarkTable bookmarks={data.bookmarks} />
             )}
 
             {/* Bookmark count */}
