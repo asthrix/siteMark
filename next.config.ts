@@ -4,14 +4,14 @@ const nextConfig: NextConfig = {
   // Image optimization configuration
   images: {
     remotePatterns: [
-      // Supabase Storage
+      // Allow any HTTPS images
       {
         protocol: "https",
-        hostname: "*.supabase.co",
+        hostname: "**",
       },
-      // Common OG image sources
+      // Allow any HTTP images (some old sites still use http)
       {
-        protocol: "https",
+        protocol: "http",
         hostname: "**",
       },
     ],

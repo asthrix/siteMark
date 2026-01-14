@@ -7,7 +7,7 @@ import { FaqSection } from "@/components/landing/faq-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { Footer } from "@/components/landing/footer";
 
-export default function RootPage() {
+export default function LandingPage() {
   return (
     <main className="relative">
       <Navbar />
