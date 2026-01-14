@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { CollectionDialog } from "@/components/collection/collection-dialog";
 import { TagDialog } from "@/components/tag/tag-dialog";
 import { DeleteDialog } from "@/components/ui/delete-dialog";
+import { UserProfile } from "@/components/ui/user-profile";
 import Image from "next/image";
 
 // ============================================================================
@@ -135,46 +136,79 @@ export function Sidebar() {
     <TooltipProvider delayDuration={300}>
       <motion.aside
         initial={false}
-        animate={{ width: isSidebarCollapsed ? 72 : 260 }}
+        animate={{ width: isSidebarCollapsed ? 80 : 260 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         className={cn(
-          "relative flex h-screen flex-col border-r border-border/50",
+          "relative flex h-screen flex-col border-r border-border/50 overflow-visible",
           "bg-sidebar/50 backdrop-blur-xl"
         )}
       >
         {/* Header */}
-        <div className="flex h-16 items-center gap-3 border-b border-border/50 px-4">
-          {/* <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground"> */}
-            <Image
-              src="/images/logo.png"
-              alt="Logo"
-              width={20}
-              height={20}
-              className="size-9 rounded-full"
-            />
-          {/* </div> */}
-          {!isSidebarCollapsed && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="font-bold text-lg tracking-tight"
-            >
-              SiteMark
-            </motion.span>
+        <div className="flex h-16 items-center border-b border-border/50 px-3">
+          {isSidebarCollapsed ? (
+            // Collapsed: Logo with expand button on right
+            <div className="flex w-full items-center justify-between">
+              {/* Logo - clickable */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div 
+                    className="flex items-center justify-center cursor-pointer group"
+                    onClick={toggleSidebarCollapse}
+                  >
+                    <Image
+                      src="/images/logo.png"
+                      alt="Logo"
+                      width={36}
+                      height={36}
+                      className="size-9 rounded-full shrink-0 transition-transform group-hover:scale-105"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">Expand sidebar</TooltipContent>
+              </Tooltip>
+              {/* Expand button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={toggleSidebarCollapse}
+                  >
+                    <ChevronLeft className="h-4 w-4 rotate-180" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Expand</TooltipContent>
+              </Tooltip>
+            </div>
+          ) : (
+            // Expanded: Show logo, title, and collapse button
+            <>
+              <Image
+                src="/images/logo.png"
+                alt="Logo"
+                width={36}
+                height={36}
+                className="size-9 rounded-full shrink-0"
+              />
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-bold text-lg tracking-tight ml-3"
+              >
+                SiteMark
+              </motion.span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto h-8 w-8 shrink-0"
+                onClick={toggleSidebarCollapse}
+                title="Collapse sidebar"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-auto h-8 w-8"
-            onClick={toggleSidebarCollapse}
-          >
-            <ChevronLeft
-              className={cn(
-                "h-4 w-4 transition-transform duration-300",
-                isSidebarCollapsed && "rotate-180"
-              )}
-            />
-          </Button>
         </div>
 
         {/* Main Navigation */}
@@ -358,32 +392,23 @@ export function Sidebar() {
           )}
         </ScrollArea>
 
-        {/* Footer */}
+        {/* Footer - User Profile */}
         <div className="border-t border-border/50 p-3">
           {isSidebarCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/settings">
-                  <Button variant="ghost" size="icon" className="h-10 w-10">
-                    <Settings className="h-5 w-5" />
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
-            </Tooltip>
+            <div className="flex flex-col items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="/settings">
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <Settings className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">Settings</TooltipContent>
+              </Tooltip>
+            </div>
           ) : (
-            <Link href="/settings">
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start gap-3 h-10",
-                  pathname === "/settings" && "bg-sidebar-accent"
-                )}
-              >
-                <Settings className="h-5 w-5" />
-                Settings
-              </Button>
-            </Link>
+            <UserProfile />
           )}
         </div>
       </motion.aside>

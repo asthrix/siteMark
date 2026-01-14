@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUIStore, type ViewMode } from "@/store/ui-store";
 import { useFilterStore, type SortOption } from "@/store/filter-store";
 import { cn } from "@/lib/utils";
+import { ThemeTogglerButton } from "../animate-ui/components/buttons/theme-toggler";
 
 // ============================================================================
 // TOP BAR
@@ -167,6 +168,8 @@ export function TopBar({
               </button>
             </div>
           )}
+
+          <ThemeTogglerButton variant="ghost" modes={["light", "dark"]} />
 
           {/* Filters */}
           {showFilters && (
