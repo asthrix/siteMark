@@ -84,22 +84,69 @@ export function parseBookmarksHtml(html: string): ImportedBookmark[] {
 // ============================================================================
 // PARSE JSON IMPORT
 // ============================================================================
-const jsonImportSchema = z.array(
-  z.object({
-    url: z.string().url(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-  })
-);
+// Supports both simple array format and SiteMark's full export format
+const simpleBookmarkSchema = z.object({
+  url: z.string().url(),
+  title: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+});
+
+const simpleArraySchema = z.array(simpleBookmarkSchema);
+
+// SiteMark's own export format
+const siteMarkExportSchema = z.object({
+  version: z.string(),
+  exportedAt: z.string(),
+  bookmarks: z.array(
+    z.object({
+      url: z.string().url(),
+      title: z.string().optional().nullable(),
+      description: z.string().optional().nullable(),
+      imageUrl: z.string().optional().nullable(),
+      createdAt: z.string().optional(),
+      isFavorite: z.boolean().optional(),
+      collection: z.string().optional().nullable(),
+      tags: z.array(z.string()).optional(),
+    })
+  ),
+  collections: z.array(z.any()).optional(),
+  tags: z.array(z.any()).optional(),
+});
 
 export function parseBookmarksJson(json: string): ImportedBookmark[] {
   try {
     const parsed = JSON.parse(json);
-    const validated = jsonImportSchema.parse(parsed);
-    return validated;
+    
+    // Try SiteMark export format first (has version and bookmarks array)
+    const siteMarkResult = siteMarkExportSchema.safeParse(parsed);
+    if (siteMarkResult.success) {
+      return siteMarkResult.data.bookmarks.map((b) => ({
+        url: b.url,
+        title: b.title || undefined,
+        description: b.description || undefined,
+        folder: b.collection || undefined,
+      }));
+    }
+    
+    // Try simple array format
+    const simpleResult = simpleArraySchema.safeParse(parsed);
+    if (simpleResult.success) {
+      return simpleResult.data.map((b) => ({
+        url: b.url,
+        title: b.title || undefined,
+        description: b.description || undefined,
+      }));
+    }
+    
+    // Neither format matched
+    throw new Error("Invalid format");
   } catch (error) {
     console.error("Failed to parse JSON bookmarks:", error);
-    throw new Error("Invalid JSON format. Expected an array of bookmark objects with url, title, and description.");
+    throw new Error(
+      "Invalid JSON format. Expected either:\n" +
+      "1. A SiteMark export file (with version, bookmarks, etc.)\n" +
+      "2. An array of bookmark objects with url, title, and description."
+    );
   }
 }
 
