@@ -1,0 +1,35 @@
+name: Keep Supabase Active
+
+# Run every 5 days to prevent Supabase from pausing after 7 days of inactivity
+on:
+   schedule:
+      # Runs at 00:00 UTC every 5 days
+      - cron: "0 0 */5 * *"
+   # Allow manual trigger
+   workflow_dispatch:
+
+jobs:
+   keep-alive:
+      runs-on: ubuntu-latest
+
+      steps:
+         - name: Ping Keep-Alive Endpoint
+           run: |
+              echo "Pinging Supabase keep-alive endpoint..."
+              response=$(curl -s -o response.json -w "%{http_code}" ${{ secrets.KEEP_ALIVE_URL }}/api/keep-alive)
+              echo "HTTP Status: $response"
+
+              if [ $response -eq 200 ]; then
+                echo "✅ Supabase is active!"
+                cat response.json
+              else
+                echo "⚠️ Keep-alive check returned status $response"
+                cat response.json
+                exit 1
+              fi
+
+         - name: Log Execution
+           if: always()
+           run: |
+              echo "Workflow executed at: $(date)"
+              echo "Next run will be in approximately 5 days"
